@@ -284,7 +284,7 @@ interface AttendanceDao {
     suspend fun updateCheckout(id: Long, checkOut: String, overtimeHours: Double)
 }
 
-@Database(entities = [AttendanceRecord::class], version = 1)
+@Database(entities = [AttendanceRecord::class], version = 1, exportSchema = false)
 abstract class HodoorDb : RoomDatabase() {
     abstract fun dao(): AttendanceDao
 }
