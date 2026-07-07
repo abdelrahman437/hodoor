@@ -21,7 +21,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Dao
@@ -60,9 +60,10 @@ class MainActivity : ComponentActivity() {
         val db = Room.databaseBuilder(applicationContext, HodoorDb::class.java, "hodoor.db").build()
         setContent {
             val vm: HodoorViewModel = viewModel(factory = HodoorViewModel.factory(db))
+            val uiState by vm.state.collectAsStateWithLifecycle()
             MaterialTheme {
                 AttendanceScreen(
-                    state = vm.state,
+                    uiState = uiState,
                     onNameChange = vm::onNameChange,
                     onStartChange = vm::onStartChange,
                     onEndChange = vm::onEndChange,
@@ -76,7 +77,9 @@ class MainActivity : ComponentActivity() {
 
     private fun authenticateAndRun(onSuccess: () -> Unit) {
         val manager = BiometricManager.from(this)
-        val canAuth = manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+        val canAuth = manager.canAuthenticate(
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
+        )
         if (canAuth != BiometricManager.BIOMETRIC_SUCCESS) return
 
         val prompt = BiometricPrompt(
@@ -99,7 +102,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun AttendanceScreen(
-    state: StateFlow<UiState>,
+    uiState: UiState,
     onNameChange: (String) -> Unit,
     onStartChange: (String) -> Unit,
     onEndChange: (String) -> Unit,
@@ -107,7 +110,6 @@ private fun AttendanceScreen(
     onCheckIn: () -> Unit,
     onCheckOut: () -> Unit
 ) {
-    val uiState by state.collectAsState()
     var currentDate by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         currentDate = LocalDate.now().toString()

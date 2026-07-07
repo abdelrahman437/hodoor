@@ -38,7 +38,13 @@ jobs:
         run: gradle wrapper --gradle-version 8.7
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace --no-daemon 2>&1 | tee build.log
+
+      - name: Show build errors
+        if: failure()
+        run: tail -n 80 build.log
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
