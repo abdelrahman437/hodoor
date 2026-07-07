@@ -5,6 +5,10 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -40,11 +44,21 @@ jobs:
       - name: Build debug APK
         run: |
           chmod +x gradlew
+          set -o pipefail
           ./gradlew assembleDebug --stacktrace --no-daemon 2>&1 | tee build.log
 
-      - name: Show build errors
+      - name: Report build failure as issue
         if: failure()
-        run: tail -n 80 build.log
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo '```' > err.md
+          grep -E "e: |error:|FAILURE|What went wrong|Caused by|> Task|Execution failed" build.log | tail -n 120 >> err.md || true
+          echo '' >> err.md
+          echo '----- FULL TAIL -----' >> err.md
+          tail -n 120 build.log >> err.md
+          echo '```' >> err.md
+          gh issue create --title "CI build error (run ${{ github.run_number }})" --body-file err.md
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

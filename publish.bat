@@ -9,7 +9,7 @@ echo ============================================
 echo.
 
 git add .
-git commit -m "Fix Android build dependencies for CI" 2>nul
+git commit -m "Capture CI build errors via issue" 2>nul
 if errorlevel 1 (
     echo [i] لا يوجد تغييرات جديدة للـ commit.
 )
